@@ -16,6 +16,7 @@ contract LockDegis {
     uint256 totalAmount;
     uint256 lockedAmount;
     uint256 unlockTime;
+    uint256 unlockInterval;
     uint256 releaseAmountEachTime;
     uint256 releaseTimes;
   }
@@ -49,11 +50,13 @@ contract LockDegis {
     return investorInfo[_investor].name;
   }
 
+  // Init all the investor information
   function setInvestorInfo(
     address _investor,
     string memory _name,
     uint256 _totalAmount,
     uint256 _unlockTime,
+    uint256 _unlockInterval,
     uint256 _releaseAmountEachTime
   ) external onlyOwner {
     investorInfo[_investor] = InvestorInfo(
@@ -61,20 +64,34 @@ contract LockDegis {
       _totalAmount,
       _totalAmount,
       _unlockTime,
+      _unlockInterval,
       _releaseAmountEachTime,
       0
     );
     investorList.push(_investor);
   }
 
+  // Manually release
   function release(address _investor) public onlyOwner {
     uint256 unlock = investorInfo[_investor].unlockTime;
-    require(block.timestamp > unlock, "have not reached the unlock time");
+    require(
+      block.timestamp > unlock,
+      "have not reached the latest unlock time"
+    );
+
+    require(
+      investorInfo[_investor].lockedAmount > 0,
+      "all assets have been released"
+    );
 
     uint256 amount = investorInfo[_investor].releaseAmountEachTime;
 
     DegisToken.safeTransfer(_investor, amount);
     investorInfo[_investor].releaseTimes += 1;
+    investorInfo[_investor].lockedAmount -= amount;
+    investorInfo[_investor].unlockTime +=
+      investorInfo[_investor].releaseTimes *
+      investorInfo[_investor].unlockInterval;
   }
 
   function checkUnlockTime(uint256 _index, address _investor)
