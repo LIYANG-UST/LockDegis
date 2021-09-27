@@ -23,6 +23,8 @@ contract LockDegis {
 
   mapping(address => InvestorInfo) investorInfo;
 
+  event Release(uint256 times, uint256 amount, address investor);
+
   modifier onlyOwner() {
     require(msg.sender == owner, "only the owner can call this function");
     _;
@@ -92,6 +94,8 @@ contract LockDegis {
     investorInfo[_investor].unlockTime +=
       investorInfo[_investor].releaseTimes *
       investorInfo[_investor].unlockInterval;
+
+    emit Release(investorInfo[_investor].releaseTimes, amount, _investor);
   }
 
   function checkUnlockTime(uint256 _index, address _investor)
